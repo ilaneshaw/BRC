@@ -1,0 +1,23 @@
+# ignore everything (dirs, files, sub-dirs, sub-files)
+/*
+# but do not ignore the .gitignore file
+!.gitignore
+
+# do not ignore R projct
+!BRC.Rproj
+
+# do not ignore the following Rmd and R files
+!BRC.Rmd
+!BRC.R
+
+
+# do not ignore the readme
+!README.md
+
+# do not ignore the following folders
+!/citations
+!/data
+!/figures
+!/R
+!/tests
+
