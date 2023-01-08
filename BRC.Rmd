@@ -1,0 +1,182 @@
+---
+title: "BRC Manual"
+subtitle: "v.`r SpaDES.core::moduleMetadata(module = 'BRC', path = '..')$version`"
+date: "Last updated: `r Sys.Date()`"
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_float: true
+    theme: sandstone
+    number_sections: false
+    df_print: paged
+    keep_md: yes
+editor_options:
+  chunk_output_type: console
+  bibliography: citations/references_BRC.bib
+citation-style: citations/ecology-letters.csl
+link-citations: true
+always_allow_html: true
+---
+
+# BRC Module
+
+<!-- the following are text references used in captions for LaTeX compatibility -->
+(ref:BRC) *BRC*
+
+```{r setup-BRC, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE, results = "hold") ## change to eval = TRUE if all chunks are to be evaluated
+
+## get citation style
+if (!file.exists("citations/ecology-letters.csl")) {
+  dir.create("citations", showWarnings = FALSE)
+  download.file("https://www.zotero.org/styles/ecology-letters", destfile = "citations/ecology-letters.csl")
+}
+
+if (!require(dplyr)) {
+  install.packages("dplyr")
+  library(dplyr)
+}
+
+dir.create("figures", showWarnings = FALSE)
+
+download.file(url = "https://img.shields.io/badge/Made%20with-Markdown-1f425f.png",
+              destfile = "figures/markdownBadge.png",
+              mode = 'wb')
+```
+
+[![made-with-Markdown](figures/markdownBadge.png)](https://commonmark.org)
+
+<!-- if knitting to pdf remember to add the pandoc_args: ["--extract-media", "."] option to yml in order to get the badge images -->
+
+#### Authors:
+
+`r paste(as.character(SpaDES.core::moduleMetadata(module = "BRC", path = '..')$authors), sep = ', ')`
+<!-- ideally separate authors with new lines, '\n' not working -->
+
+## Module Overview
+
+### Module summary
+
+Provide a brief summary of what the module does / how to use the module.
+
+Module documentation should be written so that others can use your module.
+This is a template for module documentation, and should be changed to reflect your module.
+
+### Module inputs and parameters
+
+Describe input data required by the module and how to obtain it (e.g., directly from online sources or supplied by other modules)
+If `sourceURL` is specified, `downloadData("BRC", "C:/Users/RALAS6/Documents/Repositories")` may be sufficient.
+Table \@ref(tab:moduleInputs-BRC) shows the full list of module inputs.
+
+```{r moduleInputs-BRC, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_inputs <- SpaDES.core::moduleInputs("BRC", "C:/Users/RALAS6/Documents/Repositories")
+knitr::kable(df_inputs,
+             caption = "List of (ref:BRC) input objects and their description.") %>%
+  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
+
+
+```
+
+Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-BRC))
+
+
+```{r moduleParams-BRC, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_params <- SpaDES.core::moduleParams("BRC", "C:/Users/RALAS6/Documents/Repositories")
+knitr::kable(df_params, caption = "List of (ref:BRC) parameters and their description.") %>%
+  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
+```
+
+### Events
+
+Describe what happens for each event type.
+
+### Plotting
+
+Write what is plotted.
+
+### Saving
+
+Write what is saved.
+
+### Module outputs
+
+Description of the module outputs (Table \@ref(tab:moduleOutputs-BRC)).
+
+```{r moduleOutputs-BRC, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_outputs <- SpaDES.core::moduleOutputs("BRC", "C:/Users/RALAS6/Documents/Repositories")
+knitr::kable(df_outputs, caption = "List of (ref:BRC) outputs and their description.") %>%
+  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
+```
+
+### Links to other modules
+
+Describe any anticipated linkages to other modules, such as modules that supply input data or do post-hoc analysis.
+
+### Getting help
+
+-   provide a way for people to obtain help (e.g., module repository issues page)
+
+```{r moduleRun}
+
+library(SpaDES.core)
+library(googledrive)
+
+#parameters from Drive
+birdList <- sort(c("RUBL", "CAWA", "OSFL"))
+rasterToMatchLocation <- as_id("https://drive.google.com/file/d/16dcxyFJEfqAnhnR5n6723QSzN9uKxD0r/view?usp=share_link")
+studyAreaLocation <- file.path("https://drive.google.com/file/d/1iYXdXFcZex304o5voX6igFm5EC0ck1Bp/view?usp=sharing")
+nameBCR <- "60"
+bootRastersLocation <- ""
+.studyAreaName <- "studyAreaAB.shp" #specify file name
+ #specify folder url
+archiveStudyArea <- "studyAreaAB.zip" #give archive name
+
+
+
+# #parameters from local
+# birdList <- sort(c("RUBL", "CAWA", "OSFL"))
+# rasterToMatchLocation <- file.path("C:/Users/RALAS6/Documents/Repositories/Data/LCCProducts/LCC05/LCC2005_V1_4a.tif")
+# studyAreaLocation <- file.path("C:/Users/RALAS6/Documents/Repositories/Data/.shp")
+# nameBCR <- "60"
+# bootRastersLocation <- file.path("../Data/bootBirdRasters")
+
+
+
+
+simModules <- list("BRC")
+
+## Set simulation and module parameters
+simTimes <- list(start = 1, end = 10, timeunit = "year")
+simParams <- list(
+    BRC = list(simulationTimeStep = 1, 
+               .plotInitialTime = 1,
+               fromDrive = TRUE,
+               .studyAreaName = .studyAreaName,
+               archiveStudyArea = archiveStudyArea,
+               birdList = birdList,
+               rasterToMatchLocation = rasterToMatchLocation,
+               studyAreaLocation = studyAreaLocation,
+               nameBCR = nameBCR,
+               bootRastersLocation = bootRastersLocation
+               )
+)
+
+## make a list of directory paths
+inputsDir <- checkPath("C:/Users/RALAS6/Documents/Repositories/BRC/inputs", create = TRUE)
+outputsDir <- checkPath("C:/Users/RALAS6/Documents/Repositories/BRC/outputs", create = TRUE)
+downloadFolderArea <- checkPath(file.path(inputsDir, "studyArea"), create = TRUE)
+inputBootBirdRasters <- checkPath(file.path(inputsDir, "bootBirdRasters"), create = TRUE)
+outputMeanBirdRasters <- checkPath(file.path(outputsDir, "birdRasters"), create = TRUE)
+setPaths(modulePath = file.path("C:/Users/RALAS6/Documents/Repositories/BRC/modules"),
+         inputPath = inputsDir,
+         outputPath = outputsDir)
+
+simPaths <- getPaths()
+
+## Simulation setup
+mySim <- simInit(times = simTimes, params = simParams, 
+                 modules = simModules, paths = simPaths)
+
+
+
+```

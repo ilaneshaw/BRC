@@ -1,0 +1,19 @@
+## 1. specify your module here
+moduleName <- "BRC"
+
+## 2. use a temp dir to ensure all modules get fresh copies of the data
+tmpdir <- file.path(tempdir(), "SpaDES_modules")
+
+## 3. download your module's data to the temp dir
+downloadData(moduleName, tmpdir)
+
+## 4. initialize a dummy simulation to ensure any 'data prep' steps in the .inputObjects section are run
+simInit(modules = moduleName)
+
+## 5. recalculate your checksums and overwrite the file
+checksums(moduleName, tmpdir, write = TRUE)
+
+## 6. copy the new checksums file to your working module directory (the one not in the temp dir)
+file.copy(from = file.path(tmpdir, moduleName, 'data', 'CHECKSUMS.txt'),
+          to = file.path('path/to/my/moduleDir', moduleName, 'data', 'CHECKSUMS.txt'),
+          overwrite = TRUE)
