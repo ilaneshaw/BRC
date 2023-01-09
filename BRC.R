@@ -15,8 +15,8 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.md", "BRC.Rmd"), ## same file
-  reqdPkgs = list("PredictiveEcology/SpaDES.core@development (>= 1.1.0.9017)", "ggplot2", "raster", "data.table", "rgdal", "sf",
-                  "LandR", "googledrive", "plotrix", "ggpubr", "diptest", "nortest", "dplyr", "tidyverse", "terra", "reshape2", "RColorBrewer", "rasterVis"),
+  reqdPkgs = list("PredictiveEcology/SpaDES.core@development (>= 1.1.0.9017)", "raster", "data.table", "rgdal", "sf",
+                  "LandR", "googledrive", "plotrix", "ggpubr", "diptest", "nortest", "dplyr", "ggplot2", "tidyverse", "terra", "reshape2", "RColorBrewer", "rasterVis"),
   parameters = bindrows(
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description"),
     defineParameter(".plots", "character", "screen", NA, NA,
@@ -212,6 +212,7 @@ Event2 <- function(sim) {
   # }
 
   #cacheTags <- c(currentModule(sim), "function:.inputObjects") ## uncomment this if Cache is being used
+
   dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   message(currentModule(sim), ": using dataPath '", dPath, "'.")
 
