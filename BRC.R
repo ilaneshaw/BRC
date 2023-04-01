@@ -41,6 +41,8 @@ defineModule(sim, list(
                     "a list of bird species in the format of 4-letter bird codes"),
     defineParameter("rasterToMatchLocation", "character", NA, NA, NA,
                     "the file location of the rasterToMatch"),
+    defineParameter("rasterToMatchName", "character", NA, NA, NA,
+                    "the name of the rasterToMatch file"),
     defineParameter("studyAreaLocation", "character", NA, NA, NA,
                     "the file location of the studyArea"),
     defineParameter("nameBCR", "character", NA, NA, NA,
@@ -217,35 +219,38 @@ Event2 <- function(sim) {
   message(currentModule(sim), ": using dataPath '", dPath, "'.")
 
   # ! ----- EDIT BELOW ----- ! #
-  
+  P(sim)$birdList <- sort(P(sim)$birdList)
    if (P(sim)$fromDrive == TRUE) {
    
     ### GET FILES FROM GOOGLE DRIVE ###
-
+print("get rasterToMatch")
        #get RasterToMatch
    sim$rasterToMatch <-  googledrive::drive_download(
                                 file = P(sim)$rasterToMatchLocation,
                                 overwrite = TRUE,
                                 verbose = TRUE,
                                 path = file.path(inputsDir, "LCC2005_V1_4a.tif"))
-   sim$rasterToMatch <- raster::raster(file.path(inputsDir, "LCC2005_V1_4a.tif"))
+   sim$rasterToMatch <- terra::rast(file.path(inputsDir, "LCC2005_V1_4a.tif"))
     
  # get studyArea shapefile
-     sim$studyArea <- prepInputs(targetFile = .studyAreaName,
+   print("get studyArea")
+     sim$studyArea <- prepInputs(targetFile = P(sim)$.studyAreaName,
                            url = P(sim)$studyAreaLocation,
                            archive = P(sim)$archiveStudyArea,
                            alsoExtract = "similar", #Extract other files with similar names
                            destinationPath = downloadFolderArea, #folder to download to
-                           fun = "raster::shapefile", #use the function shapefile
+                           #fun = "raster::shapefile", #use the function shapefile
+                           useTerra = TRUE,
                            targetCRS = crs(sim$rasterToMatch), #make crs same as rasterToMatch
                            overwrite = TRUE,
                            verbose = TRUE)
 
    #crop and mask rasterTomatch to studyArea
-   sim$rasterToMatch <- raster::crop(sim$rasterToMatch, sim$studyArea)
-   sim$rasterToMatch <- raster::mask(sim$rasterToMatch, sim$studyArea)
+     sim$rasterToMatch <- terra::mask(terra::crop(sim$rasterToMatch, sim$studyArea), sim$studyArea)
+     names(sim$rasterToMatch) <- "rasterToMatch"
    
    # get boot bird rasters and produce 
+   print("get boot bird rasters")
    lapply(X = P(sim)$birdList,
           FUN = function(bird) {
           
@@ -256,16 +261,18 @@ Event2 <- function(sim) {
             filesToDownload <- 
               googledrive::drive_ls(path = as_id(bootRastersLocation),
                                     pattern = patternNameBirdRaster)
-           
-            
+            filesToDownload <- filesToDownload[order(filesToDownload$name),]
+           print(filesToDownload)
             ## download the rasters to downloadsBRC folder
             lapply(X = filesToDownload$name,
                    FUN = function(rasterFile) {
-                     googledrive::drive_download(
+                     tryCatch({
+                       googledrive::drive_download(
                        file = as_id(filesToDownload[filesToDownload$name %in% rasterFile,]$id),
                        overwrite = TRUE,
                        verbose = TRUE,
                        path = file.path(inputBootBirdRasters,rasterFile))
+                     }, error = function(e) return(NULL))
                    }
             )
             
@@ -275,44 +282,59 @@ Event2 <- function(sim) {
            
             #postprocess bootRasters (crop and make CRS of rasterToMatch)
             bootRasters <- lapply(X = bootNames, FUN = function(ras){
-                            bootRaster <- raster(paste(inputBootBirdRasters, "/", ras, sep = ""))
+              tryCatch({ 
+                            print(ras)
+                            bootRaster <- terra::rast(paste(inputBootBirdRasters, "/", ras, sep = ""))
                             bootRaster <- postProcess(bootRaster,
                                         filename2 = file.path(paste(inputBootBirdRasters, "/", ras, sep = "")),
                                         overwrite = TRUE,
+                                        useTerra = TRUE,
+                                        fun = "terra::rast",
                                         rasterToMatch = sim$rasterToMatch,
                                         verbose = TRUE,
                                         studyArea = sim$studyArea,
               )
               
               return(bootRaster)
-              
+            }, error = function(e) return(NULL))
             })
-
-            names(bootRasters) <- bootNames
             
+            names(bootRasters) <- bootNames
+            bootRasters[sapply(bootRasters, is.null)] <- NULL
            
             #find out number of boot Rasters
             noRasters <- length(bootRasters)
             print(paste(noRasters, " rasters for ", bird, sep = ""))
+            birdSp <- bird
+            noBootRasPerSp <- cbind(birdSp, noRasters)
             
-            bootRastersStack <- raster::stack(bootRasters, verbose = TRUE)
+            if(noRasters > 1){
             
+              bootRasters <- terra::rast(bootRasters)
+              print("write mean and se raster")
             # write mean rasters
-            meanRaster <- raster::overlay(bootRastersStack, fun= mean, verbose = TRUE)
+            meanRaster <- terra::app(bootRasters, fun= mean, verbose = TRUE)
             meanRasterName <- paste(bird, "-meanBoot", sep = "")
             names(meanRaster) <- meanRasterName
-            writeRaster(x = meanRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-meanBoot", sep = "")),
-                        format = "GTiff",
+            terra::writeRaster(x = meanRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-meanBoot_", P(sim)$nameBCR, sep = "")),
+                        filetype= "GTiff",
+                        gdal="COMPRESS=NONE",
                         overwrite = TRUE)
             
             # write standard error rasters
-            seRaster <- raster::overlay(bootRastersStack, fun = std.error)
+            seRaster <- terra::app(bootRasters, fun = std.error)
             seRasterName <- paste(bird, "-seBoot", sep = "")
             names(seRaster) <- seRasterName
-            writeRaster(x = seRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-seBoot", sep = "")),
-                        format = "GTiff",
+            terra::writeRaster(x = seRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-seBoot_", P(sim)$nameBCR, sep = "")),
+                               filetype= "GTiff",
+                               gdal="COMPRESS=NONE",
                         overwrite = TRUE)
-            
+            } else {
+              terra::writeRaster(x = bootRasters, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-meanBoot", sep = "")),
+                          filetype= "GTiff",
+                          gdal="COMPRESS=NONE",
+                          overwrite = TRUE)
+            }
             
             # ### DANGER!!!
             # get all files in the directories, recursively
@@ -320,39 +342,45 @@ Event2 <- function(sim) {
             # remove the files
             file.remove(toDelete)
 
-            
+            return(noBootRasPerSp) 
           }
+          
    )
    
   } else {
-    
+    browser()  
   ### GET FILES FROM LOCAL LOCATION ###
-  
+  print("get files from local folder")
+    
   #get rasterToMatch
-  sim$rasterToMatch <- raster(file.path(P(sim)$rasterToMatchLocation))
+    print("get rasterToMatch")
+    sim$rasterToMatch <- terra::rast(file.path(P(sim)$rasterToMatchLocation, P(sim)$rasterToMatchName))
   
   
   #get StudyArea shapefile
-  sim$studyArea <- st_read(file.path(P(sim)$studyAreaLocation))
+  print("get studyArea")
+  sim$studyArea <- terra::vect(file.path(P(sim)$studyAreaLocation))
   
   #postProcess studyArea
   sim$studyArea <- reproducible::postProcess(sim$studyArea,
                                          destinationPath = downloadFolderArea,
                                          filename2 = "studyArea",            
-                                         fun = "raster::shapefile", #use the function shapefile
+                                         fun = "terra::vect", #use the function vect
+                                         useTerra = TRUE,
                                          targetCRS = crs(sim$rasterToMatch), #make crs same as rasterToMatch
                                          overwrite = TRUE,
                                          verbose = TRUE)
   
-  #crop and mask rasterToMatch
-  sim$rasterToMatch <- raster::crop(sim$rasterToMatch, sim$studyArea) 
-  sim$rasterToMatch <- raster::mask(sim$rasterToMatch, sim$studyArea) 
+  #crop and mask rasterTomatch to studyArea
+  sim$rasterToMatch <- terra::mask(terra::crop(sim$rasterToMatch, sim$studyArea), sim$studyArea)
+  names(sim$rasterToMatch) <- "rasterToMatch"
   
   browser()
   #produce mean rasters using getMeanRastersFunction
+  print("get bird rasters")
   getMeanRasters <- function(bird) {
   tryCatch({
-    
+    browser()
     print(bird)
     
     patternNameBirdRaster <- paste("pred250-", bird, "-BCR_", P(sim)$nameBCR, "-boot-", sep = "")
@@ -361,12 +389,15 @@ Event2 <- function(sim) {
     
     bootRasters <- lapply(X = bootNames, FUN = function(ras){
       tryCatch({
+        browser()
         print(ras)
-        bootRaster <- raster(paste(P(sim)$bootRastersLocation, "/", ras, sep = ""))
+        bootRaster <- terra::rast(paste(P(sim)$bootRastersLocation, "/", ras, sep = ""))
         
         bootRaster <- postProcess(bootRaster,
                                   #filename2 = file.path(paste(downloadsBRC, "/", ras, sep = "")),
                                   #overwrite = TRUE,
+                                  useTerra = TRUE,
+                                  fun = "terra::rast",
                                   rasterToMatch = sim$rasterToMatch,
                                   verbose = TRUE)
         #                           studyArea = studyArea,
@@ -379,31 +410,47 @@ Event2 <- function(sim) {
     #find out number of boot Rasters
     noRasters <- length(bootRasters)
     print(paste(noRasters, " rasters for ", bird, sep = ""))
+    birdSp <- bird
+    noBootRasPerSp <- cbind(birdSp, noRasters)
     
-    bootRastersStack <- raster::stack(bootRasters, verbose = TRUE)
+    if(noRasters > 1){
+      
+      bootRasters <- terra::rast(bootRasters)
+      print("write mean and se raster")
+      # write mean rasters
+      meanRaster <- terra::app(bootRasters, fun= mean, verbose = TRUE)
+      meanRasterName <- paste(bird, "-meanBoot", sep = "")
+      names(meanRaster) <- meanRasterName
+      terra::writeRaster(x = meanRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-meanBoot_", P(sim)$nameBCR, sep = "")),
+                         filetype= "GTiff",
+                         gdal="COMPRESS=NONE",
+                         overwrite = TRUE)
+      
+      # write standard error rasters
+      seRaster <- terra::app(bootRasters, fun = std.error)
+      seRasterName <- paste(bird, "-seBoot", sep = "")
+      names(seRaster) <- seRasterName
+      terra::writeRaster(x = seRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-seBoot_", P(sim)$nameBCR, sep = "")),
+                         filetype= "GTiff",
+                         gdal="COMPRESS=NONE",
+                         overwrite = TRUE)
+    } else {
+      terra::writeRaster(x = bootRasters, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-meanBoot", sep = "")),
+                         filetype= "GTiff",
+                         gdal="COMPRESS=NONE",
+                         overwrite = TRUE)
+    }
     
-    # write mean rasters
-    meanRaster <- raster::overlay(bootRastersStack, fun= mean, verbose = TRUE)
-    meanRasterName <- paste(bird, "-meanBoot", sep = "")
-    names(meanRaster) <- meanRasterName
-    writeRaster(x = meanRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-meanBoot", sep = "")),
-                format = "GTiff",
-                overwrite = TRUE)
-    
-    # write standard error rasters
-    seRaster <- raster::overlay(bootRastersStack, fun = std.error)
-    seRasterName <- paste(bird, "-seBoot", sep = "")
-    names(seRaster) <- seRasterName
-    writeRaster(x = seRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-seBoot", sep = "")),
-                format = "GTiff",
-                overwrite = TRUE)
-   
+    return(noBootRasPerSp)
   }, error = function(e) return(NULL))  
 }
 
-  
-lapply(X = P(sim)$birdList,
-       FUN = getMeanRasters)
+  browser()
+  summaryBRC <- lapply(X = P(sim)$birdList,
+                  FUN = getMeanRasters)
+
+  sim$summaryBRC <- rbind(summaryBRC)
+  write.csv(sim$summaryBRC, file =  file.path(outputMeanBirdRasters, "summaryBRC.csv"))
 
   }
   # ! ----- STOP EDITING ----- ! #

@@ -123,46 +123,6 @@ Describe any anticipated linkages to other modules, such as modules that supply 
 library(SpaDES.core)
 library(googledrive)
 
-#parameters from Drive
-birdList <- sort(c("RUBL", "CAWA", "OSFL"))
-rasterToMatchLocation <- as_id("https://drive.google.com/file/d/16dcxyFJEfqAnhnR5n6723QSzN9uKxD0r/view?usp=share_link")
-studyAreaLocation <- file.path("https://drive.google.com/file/d/1iYXdXFcZex304o5voX6igFm5EC0ck1Bp/view?usp=sharing")
-nameBCR <- "60"
-bootRastersLocation <- ""
-.studyAreaName <- "studyAreaAB.shp" #specify file name
- #specify folder url
-archiveStudyArea <- "studyAreaAB.zip" #give archive name
-
-
-
-# #parameters from local
-# birdList <- sort(c("RUBL", "CAWA", "OSFL"))
-# rasterToMatchLocation <- file.path("C:/Users/RALAS6/Documents/Repositories/Data/LCCProducts/LCC05/LCC2005_V1_4a.tif")
-# studyAreaLocation <- file.path("C:/Users/RALAS6/Documents/Repositories/Data/.shp")
-# nameBCR <- "60"
-# bootRastersLocation <- file.path("../Data/bootBirdRasters")
-
-
-
-
-simModules <- list("BRC")
-
-## Set simulation and module parameters
-simTimes <- list(start = 1, end = 10, timeunit = "year")
-simParams <- list(
-    BRC = list(simulationTimeStep = 10, 
-               .plotInitialTime = 1,
-               fromDrive = TRUE,
-               .studyAreaName = .studyAreaName,
-               archiveStudyArea = archiveStudyArea,
-               birdList = birdList,
-               rasterToMatchLocation = rasterToMatchLocation,
-               studyAreaLocation = studyAreaLocation,
-               nameBCR = nameBCR,
-               bootRastersLocation = bootRastersLocation
-               )
-)
-
 ## make a list of directory paths
 inputsDir <- checkPath("C:/Users/RALAS6/Documents/Repositories/SpaDES/inputs", create = TRUE)
 outputsDir <- checkPath("C:/Users/RALAS6/Documents/Repositories/SpaDES/outputs", create = TRUE)
@@ -177,6 +137,51 @@ setPaths(modulePath = file.path("C:/Users/RALAS6/Documents/Repositories/SpaDES/m
 
 
 simPaths <- getPaths()
+
+#parameters from Drive
+# birdList <- c("RUBL", "CAWA", "OSFL")
+# rasterToMatchLocation <- as_id("https://drive.google.com/file/d/1dprb9sQZAUP6ty4BOQMbFf4gSiHKnvqp/view?usp=share_link")
+# studyAreaLocation <- file.path("https://drive.google.com/file/d/1iYXdXFcZex304o5voX6igFm5EC0ck1Bp/view?usp=sharing")
+# nameBCR <- "60"
+# bootRastersLocation <- ""
+# .studyAreaName <- "studyAreaAB.shp" #specify file name
+#  #specify folder url
+# archiveStudyArea <- "studyAreaAB.zip" #give archive name
+
+
+
+#parameters from local
+birdList <- sort(c("RUBL", "CAWA", "OSFL"))
+rasterToMatchLocation <- inputsDir 
+rasterToMatchName <- "LCC2005_v1_4a.tif"
+studyAreaLocation <- downloadFolderArea
+nameBCR <- "60"
+bootRastersLocation <- downloadFolderArea
+.studyAreaName <- "studyAreaAB.shp" #specify file name
+
+
+
+
+simModules <- list("BRC")
+
+## Set simulation and module parameters
+simTimes <- list(start = 1, end = 10, timeunit = "year")
+simParams <- list(
+    BRC = list(simulationTimeStep = 10, 
+               .plotInitialTime = 1,
+               fromDrive = FALSE,
+               .studyAreaName = .studyAreaName,
+               archiveStudyArea = archiveStudyArea,
+               birdList = birdList,
+               rasterToMatchLocation = rasterToMatchLocation,
+               rasterToMatchName = rasterToMatchName,
+               studyAreaLocation = studyAreaLocation,
+               nameBCR = nameBCR,
+               bootRastersLocation = bootRastersLocation
+               )
+)
+
+
 
 ## Simulation setup
 mySim <- simInit(times = simTimes, params = simParams, 
