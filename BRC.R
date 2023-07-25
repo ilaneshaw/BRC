@@ -15,7 +15,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.md", "BRC.Rmd"), ## same file
-  reqdPkgs = list("PredictiveEcology/SpaDES.core@development (>= 1.1.0.9017)", "raster", "data.table", "rgdal", "sf",
+  reqdPkgs = list("SpaDES.core", "raster", "data.table", "rgdal", "sf",
                   "LandR", "googledrive", "plotrix", "ggpubr", "diptest", "nortest", "dplyr", "ggplot2", "tidyverse", "terra", "reshape2", "RColorBrewer", "rasterVis"),
   parameters = bindrows(
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description"),
@@ -330,7 +330,13 @@ print("get rasterToMatch")
                                gdal="COMPRESS=NONE",
                         overwrite = TRUE)
             } else {
-              terra::writeRaster(x = bootRasters, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-meanBoot", sep = "")),
+              
+              
+              bootRaster <- unlist(bootRasters, use.names = FALSE)
+              bootRaster <- bootRaster[[1]]
+              meanRasterName <- paste(bird, "-meanBoot", sep = "")
+              names(bootRaster) <- meanRasterName
+              terra::writeRaster(x = bootRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-meanBoot_", P(sim)$nameBCR, sep = "")),
                           filetype= "GTiff",
                           gdal="COMPRESS=NONE",
                           overwrite = TRUE)
@@ -348,7 +354,7 @@ print("get rasterToMatch")
    )
    
   } else {
-    browser()  
+    
   ### GET FILES FROM LOCAL LOCATION ###
   print("get files from local folder")
     
@@ -375,12 +381,12 @@ print("get rasterToMatch")
   sim$rasterToMatch <- terra::mask(terra::crop(sim$rasterToMatch, sim$studyArea), sim$studyArea)
   names(sim$rasterToMatch) <- "rasterToMatch"
   
-  browser()
+  
   #produce mean rasters using getMeanRastersFunction
   print("get bird rasters")
   getMeanRasters <- function(bird) {
-  tryCatch({
-    browser()
+  #tryCatch({
+    
     print(bird)
     
     patternNameBirdRaster <- paste("pred250-", bird, "-BCR_", P(sim)$nameBCR, "-boot-", sep = "")
@@ -389,7 +395,7 @@ print("get rasterToMatch")
     
     bootRasters <- lapply(X = bootNames, FUN = function(ras){
       tryCatch({
-        browser()
+        
         print(ras)
         bootRaster <- terra::rast(paste(P(sim)$bootRastersLocation, "/", ras, sep = ""))
         
@@ -411,10 +417,10 @@ print("get rasterToMatch")
     noRasters <- length(bootRasters)
     print(paste(noRasters, " rasters for ", bird, sep = ""))
     birdSp <- bird
-    noBootRasPerSp <- cbind(birdSp, noRasters)
+    noBootRasPerSp <- as.data.frame(cbind(birdSp, noRasters))
     
     if(noRasters > 1){
-      
+      tryCatch({
       bootRasters <- terra::rast(bootRasters)
       print("write mean and se raster")
       # write mean rasters
@@ -434,22 +440,29 @@ print("get rasterToMatch")
                          filetype= "GTiff",
                          gdal="COMPRESS=NONE",
                          overwrite = TRUE)
+      }, error = function(e) return(NULL))
     } else {
-      terra::writeRaster(x = bootRasters, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-meanBoot", sep = "")),
+      tryCatch({
+      bootRaster <- unlist(bootRasters, use.names = FALSE)
+      bootRaster <- bootRaster[[1]]
+      meanRasterName <- paste(bird, "-meanBoot", sep = "")
+      names(bootRaster) <- meanRasterName
+      terra::writeRaster(x = bootRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-meanBoot_", P(sim)$nameBCR, sep = "")),
                          filetype= "GTiff",
                          gdal="COMPRESS=NONE",
                          overwrite = TRUE)
+    }, error = function(e) return(NULL))
     }
     
     return(noBootRasPerSp)
-  }, error = function(e) return(NULL))  
+  #}, error = function(e) return(NULL))  
 }
 
-  browser()
+  
   summaryBRC <- lapply(X = P(sim)$birdList,
                   FUN = getMeanRasters)
-
-  sim$summaryBRC <- rbind(summaryBRC)
+ 
+  sim$summaryBRC <- rbindlist(summaryBRC)
   write.csv(sim$summaryBRC, file =  file.path(outputMeanBirdRasters, "summaryBRC.csv"))
 
   }
