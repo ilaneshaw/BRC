@@ -139,31 +139,31 @@ setPaths(modulePath = file.path("../../modules"),
 
 simPaths <- getPaths()
 
-#parameters from Drive
-birdList <- c("AMCR", "CAWA")
-rasterToMatchLocation <- as_id("https://drive.google.com/file/d/1dprb9sQZAUP6ty4BOQMbFf4gSiHKnvqp/view?usp=share_link")
-studyAreaLocation <- file.path("https://drive.google.com/file/d/1iYXdXFcZex304o5voX6igFm5EC0ck1Bp/view?usp=sharing")
-nameBCR <- "60"
-bootRastersLocation <- ""
-.studyAreaName <- "studyAreaAB.shp" #specify file name
- #specify folder url
-archiveStudyArea <- "studyAreaAB.zip" #give archive name
-rasterToMatchName <- "LCC2005_V1_4a.tif"
-
-
-# print("get parameters from local")
-# #parameters from local
-# #birdList <- sort(c("RUBL", "CAWA", "OSFL"))
-# birdList <- sort(c("ALFL","AMCR", "AMGO","AMPI","AMRE", "AMRO","ATSP","ATTW","BANS","BAOR","BARS","BAWW","BBCU", "BBMA","BBWA", "BBWO","BCCH","BEKI","BHCO", "BHVI","BLBW","BLJA","BLPW","BOBO","BOCH","BOWA","BRBL","BRCR","BRTH", "BTNW", "BWWA","CAWA","CCSP","CEDW","CHSP","CLSW","CMWA","COGR","CONW","CORA","COYE","CSWA","DEJU","DOWO", "DUFL","EABL","EAKI","EAPH", "EATO","EAWP","EUST", "EVGR","FOSP","GCFL","GCKI", "GCSP", "GCTH","GRAJ","GRCA","GRSP","GRYE","GWWA","HAFL","HAWO","HETH","HOLA","HOSP","HOWR","INBU","KILL","LCSP","LEFL", "LEYE", "MOWA","NESP","OSFL","OVEN","PAWA", "PHVI","RBNU", "RCKI","REVI", "RUBL","SWTH", "TEWA", "WCSP", "WETA", "WIWR", "YRWA"))
-# #rasterToMatchLocation <- inputsDir #personal laptop
-# rasterToMatchLocation <- inputsDir
-# rasterToMatchName <- "LCC2005_V1_4a.tif"
-# #studyAreaLocation <- downloadFolderArea #personal laptop
-# studyAreaLocation <- downloadFolderArea
+# #parameters from Drive
+# birdList <- c("AMCR", "CAWA")
+# rasterToMatchLocation <- as_id("https://drive.google.com/file/d/1dprb9sQZAUP6ty4BOQMbFf4gSiHKnvqp/view?usp=share_link")
+# studyAreaLocation <- file.path("https://drive.google.com/file/d/1iYXdXFcZex304o5voX6igFm5EC0ck1Bp/view?usp=sharing")
 # nameBCR <- "60"
-# bootRastersLocation <- inputBootBirdRasters
-# #bootRastersLocation <- inputBootBirdRasters #personal laptop
+# bootRastersLocation <- ""
 # .studyAreaName <- "studyAreaAB.shp" #specify file name
+#  #specify folder url
+# archiveStudyArea <- "studyAreaAB.zip" #give archive name
+# rasterToMatchName <- "LCC2005_V1_4a.tif"
+
+
+print("get parameters from local")
+#parameters from local
+birdList <- sort(c("CAWA", "OVEN"))
+# birdList <- sort(c("ALFL","AMCR", "AMGO","AMPI","AMRE", "AMRO","ATSP","ATTW","BANS","BAOR","BARS","BAWW","BBCU", "BBMA","BBWA", "BBWO","BCCH","BEKI","BHCO", "BHVI","BLBW","BLJA","BLPW","BOBO","BOCH","BOWA","BRBL","BRCR","BRTH", "BTNW", "BWWA","CAWA","CCSP","CEDW","CHSP","CLSW","CMWA","COGR","CONW","CORA","COYE","CSWA","DEJU","DOWO", "DUFL","EABL","EAKI","EAPH", "EATO","EAWP","EUST", "EVGR","FOSP","GCFL","GCKI", "GCSP", "GCTH","GRAJ","GRCA","GRSP","GRYE","GWWA","HAFL","HAWO","HETH","HOLA","HOSP","HOWR","INBU","KILL","LCSP","LEFL", "LEYE", "MOWA","NESP","OSFL","OVEN","PAWA", "PHVI","RBNU", "RCKI","REVI", "RUBL","SWTH", "TEWA", "WCSP", "WETA", "WIWR", "YRWA"))
+#rasterToMatchLocation <- inputsDir #personal laptop
+rasterToMatchLocation <- inputsDir
+rasterToMatchName <- "LCC2005_V1_4a.tif"
+#studyAreaLocation <- downloadFolderArea #personal laptop
+studyAreaLocation <- downloadFolderArea
+nameBCR <- "12"
+bootRastersLocation <- inputBootBirdRasters
+#bootRastersLocation <- inputBootBirdRasters #personal laptop
+.studyAreaName <- "EeyouIstchee.shp" #specify file name
 
 
 
@@ -175,9 +175,13 @@ simTimes <- list(start = 1, end = 10, timeunit = "year")
 simParams <- list(
   BRC = list(simulationTimeStep = 10, 
              .plotInitialTime = 1,
-             fromDrive = TRUE,
+             fromDrive = FALSE,
+             writeMeanRas = FALSE,
+             writeMedianRas = TRUE,
+             writeSERas = FALSE,
+             writeSDRas = TRUE,
              .studyAreaName = .studyAreaName,
-             archiveStudyArea = archiveStudyArea,
+             #archiveStudyArea = archiveStudyArea,
              birdList = birdList,
              rasterToMatchLocation = rasterToMatchLocation,
              rasterToMatchName = rasterToMatchName,

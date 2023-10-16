@@ -6,9 +6,9 @@
 ## If exact location is required, functions will be: `sim$.mods$<moduleName>$FunctionName`.
 defineModule(sim, list(
   name = "BRC",
-  description = "This module is designed to calculate the mean and standard error among bootstrap replicates of the Boreal Avian Modelling Project's National Models of bird density",
+  description = "This module is designed to calculate the mean and variance among bootstrap replicates of the Boreal Avian Modelling Project's National Models of bird density",
   keywords = "",
-  authors = structure(list(list(given = c("R", "Isolde"), family = "Lane Shaw", role = c("aut", "cre"), email = "r.i.lane.shaw@gmail.com", comment = NULL)), class = "person"),
+  authors = structure(list(list(given = c("R", "Isolde"), family = "Lane-Shaw", role = c("aut", "cre"), email = "r.i.lane.shaw@gmail.com", comment = NULL)), class = "person"),
   childModules = character(0),
   version = list(BRC = "0.0.0.9000"),
   timeframe = as.POSIXlt(c(NA, NA)),
@@ -49,6 +49,14 @@ defineModule(sim, list(
                     "the BAM regional model BCR region that the studyArea is located in"),
     defineParameter("bootRastersLocation", "character", NA, NA, NA,
                     "the file location of the BAM Regional Model Bootstraps"),
+    defineParameter("writeMeanRas", "logical", TRUE, NA, NA,
+                    "should a raster of the mean value at each pixel location be created"),
+    defineParameter("writeMedianRas", "logical", FALSE, NA, NA,
+                    "should a raster of the median value at each pixel location be created"),
+    defineParameter("writeSERas", "logical", FALSE, NA, NA,
+                    "should a raster of the Standard Error at each pixel location be created"),
+    defineParameter("writeSDRas", "logical", FALSE, NA, NA,
+                    "should a raster of the standard deviation at each pixel location be created"),
     ## .seed is optional: `list('init' = 123)` will `set.seed(123)` for the `init` event only.
     defineParameter(".seed", "list", list(), NA, NA,
                     "Named list of seeds to use for each event (names)."),
@@ -58,6 +66,8 @@ defineModule(sim, list(
   inputObjects = bindrows(
     #expectsInput("objectName", "objectClass", "input object description", sourceURL, ...),
     expectsInput(objectName = NA, objectClass = NA, desc = NA, sourceURL = NA),
+    expectsInput("rasterToMatch", "SpatRaster", desc = "A raster used to determine projection and resolution of other spatial objects. Must cover all of the region covered by the studyArea"),
+    expectsInput("studyArea", "SpatVector", desc = "Polygon to use as the study area.")
     #expectsInput(objectName = rasterToMatch, objectClass = "raster", desc = NA, sourceURL = NA)
   ),
   outputObjects = bindrows(
@@ -219,6 +229,10 @@ Event2 <- function(sim) {
   message(currentModule(sim), ": using dataPath '", dPath, "'.")
 
   # ! ----- EDIT BELOW ----- ! #
+  
+ sim$areaName <- P(sim)$.studyAreaName
+ P(sim)$.studyAreaName <- paste(.studyAreaName, ".shp", sep = "")
+  
   P(sim)$birdList <- sort(P(sim)$birdList)
    if (P(sim)$fromDrive == TRUE) {
    
@@ -291,8 +305,9 @@ print("get rasterToMatch")
                                         useTerra = TRUE,
                                         fun = "terra::rast",
                                         rasterToMatch = sim$rasterToMatch,
-                                        verbose = TRUE,
-                                        studyArea = sim$studyArea,
+                                        #studyArea = sim$studyArea,
+                                        verbose = TRUE
+                                        
               )
               
               return(bootRaster)
@@ -310,22 +325,32 @@ print("get rasterToMatch")
             
             if(noRasters > 1){
             
-              bootRasters <- terra::rast(bootRasters)
-              print("write mean and se raster")
+               bootRasters <- terra::rast(bootRasters)
+            #   print("write mean and se raster")
+            # # write mean rasters
+            # meanRaster <- terra::app(bootRasters, fun= mean, verbose = TRUE)
+            # meanRasterName <- paste(bird, "-meanBoot", sep = "")
+            # names(meanRaster) <- meanRasterName
+            # terra::writeRaster(x = meanRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-meanBoot_BCR-", P(sim)$nameBCR, "_", sim$areaName, sep = "")),
+            #             filetype= "GTiff",
+            #             gdal="COMPRESS=NONE",
+            #             overwrite = TRUE)
+            
+            print("write median and se raster")
             # write mean rasters
-            meanRaster <- terra::app(bootRasters, fun= mean, verbose = TRUE)
-            meanRasterName <- paste(bird, "-meanBoot", sep = "")
-            names(meanRaster) <- meanRasterName
-            terra::writeRaster(x = meanRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-meanBoot_", P(sim)$nameBCR, sep = "")),
-                        filetype= "GTiff",
-                        gdal="COMPRESS=NONE",
-                        overwrite = TRUE)
+            medianRaster <- terra::app(bootRasters, fun= median, verbose = TRUE)
+            medianRasterName <- paste(bird, "-medianBoot", sep = "")
+            names(medianRaster) <- medianRasterName
+            terra::writeRaster(x = medianRaster, filename = file.path(paste(outputMedianBirdRasters,"/", bird, "-medianBoot_BCR-", P(sim)$nameBCR, "_", sim$areaName, sep = "")),
+                               filetype= "GTiff",
+                               gdal="COMPRESS=NONE",
+                               overwrite = TRUE)
             
             # write standard error rasters
             seRaster <- terra::app(bootRasters, fun = std.error)
             seRasterName <- paste(bird, "-seBoot", sep = "")
             names(seRaster) <- seRasterName
-            terra::writeRaster(x = seRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-seBoot_", P(sim)$nameBCR, sep = "")),
+            terra::writeRaster(x = seRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-seBoot_BCR-", P(sim)$nameBCR, "_", sim$areaName, sep = "")),
                                filetype= "GTiff",
                                gdal="COMPRESS=NONE",
                         overwrite = TRUE)
@@ -334,12 +359,19 @@ print("get rasterToMatch")
               
               bootRaster <- unlist(bootRasters, use.names = FALSE)
               bootRaster <- bootRaster[[1]]
-              meanRasterName <- paste(bird, "-meanBoot", sep = "")
-              names(bootRaster) <- meanRasterName
-              terra::writeRaster(x = bootRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-meanBoot_", P(sim)$nameBCR, sep = "")),
-                          filetype= "GTiff",
-                          gdal="COMPRESS=NONE",
-                          overwrite = TRUE)
+              # meanRasterName <- paste(bird, "-meanBoot", sep = "")
+              # names(bootRaster) <- meanRasterName
+              # terra::writeRaster(x = bootRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-meanBoot_BCR-", P(sim)$nameBCR, "_", sim$areaName, sep = "")),
+              #             filetype= "GTiff",
+              #             gdal="COMPRESS=NONE",
+              #             overwrite = TRUE)
+              
+              medianRasterName <- paste(bird, "-medianBoot", sep = "")
+              names(bootRaster) <- medianRasterName
+              terra::writeRaster(x = bootRaster, filename = file.path(paste(outputMedianBirdRasters,"/", bird, "-medianBoot_BCR-", P(sim)$nameBCR, "_", sim$areaName, sep = "")),
+                                 filetype= "GTiff",
+                                 gdal="COMPRESS=NONE",
+                                 overwrite = TRUE)
             }
             
             # ### DANGER!!!
@@ -382,8 +414,10 @@ print("get rasterToMatch")
   names(sim$rasterToMatch) <- "rasterToMatch"
   
   
+  
   #produce mean rasters using getMeanRastersFunction
-  print("get bird rasters")
+  print("get mean bird rasters")
+  
   getMeanRasters <- function(bird) {
   #tryCatch({
     
@@ -408,7 +442,7 @@ print("get rasterToMatch")
                                   verbose = TRUE)
         #                           studyArea = studyArea,
         # )
-       
+       print("raster postprocessed")
         return(bootRaster)
       }, error = function(e) return(NULL))
     })
@@ -423,23 +457,53 @@ print("get rasterToMatch")
       tryCatch({
       bootRasters <- terra::rast(bootRasters)
       print("write mean and se raster")
+      
+      if (P(sim)$writeMeanRas == TRUE) {
       # write mean rasters
       meanRaster <- terra::app(bootRasters, fun= mean, verbose = TRUE)
-      meanRasterName <- paste(bird, "-meanBoot", sep = "")
+      meanRasterName <- paste(bird, "-meanBoot_", P(sim)$nameBCR, sep = "")
       names(meanRaster) <- meanRasterName
-      terra::writeRaster(x = meanRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-meanBoot_", P(sim)$nameBCR, sep = "")),
+      terra::writeRaster(x = meanRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-meanBoot_BCR-", P(sim)$nameBCR, "_", sim$areaName, sep = "")),
                          filetype= "GTiff",
                          gdal="COMPRESS=NONE",
                          overwrite = TRUE)
+      }
       
+      if (P(sim)$writeMedianRas == TRUE) {
+        # write mean rasters
+        medianRaster <- terra::app(bootRasters, fun= median, verbose = TRUE)
+        medianRasterName <- paste(bird, "-medianBoot_", P(sim)$nameBCR, sep = "")
+        names(medianRaster) <- medianRasterName
+        terra::writeRaster(x = medianRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-medianBoot_BCR-", P(sim)$nameBCR, "_", sim$areaName, sep = "")),
+                           filetype= "GTiff",
+                           gdal="COMPRESS=NONE",
+                           overwrite = TRUE)
+      }
+      
+      if (P(sim)$writeSERas == TRUE) {
       # write standard error rasters
       seRaster <- terra::app(bootRasters, fun = std.error)
-      seRasterName <- paste(bird, "-seBoot", sep = "")
+      seRasterName <- paste(bird, "-seBoot_", P(sim)$nameBCR, sep = "")
       names(seRaster) <- seRasterName
-      terra::writeRaster(x = seRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-seBoot_", P(sim)$nameBCR, sep = "")),
+      terra::writeRaster(x = seRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-seBoot_BCR-", P(sim)$nameBCR, "_", sim$areaName, sep = "")),
                          filetype= "GTiff",
                          gdal="COMPRESS=NONE",
                          overwrite = TRUE)
+      }
+      
+      if (P(sim)$writeSDRas == TRUE) {
+        # write mean rasters
+        sdRaster <- terra::app(bootRasters, fun= sd, verbose = TRUE)
+        sdRasterName <- paste(bird, "-sdBoot_", P(sim)$nameBCR, sep = "")
+        names(sdRaster) <- sdRasterName
+        terra::writeRaster(x = sdRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-sdBoot_BCR-", P(sim)$nameBCR, "_", sim$areaName, sep = "")),
+                           filetype= "GTiff",
+                           gdal="COMPRESS=NONE",
+                           overwrite = TRUE)
+      }
+      
+      print("summary rasters written")
+      
       }, error = function(e) return(NULL))
     } else {
       tryCatch({
@@ -447,7 +511,7 @@ print("get rasterToMatch")
       bootRaster <- bootRaster[[1]]
       meanRasterName <- paste(bird, "-meanBoot", sep = "")
       names(bootRaster) <- meanRasterName
-      terra::writeRaster(x = bootRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-meanBoot_", P(sim)$nameBCR, sep = "")),
+      terra::writeRaster(x = bootRaster, filename = file.path(paste(outputMeanBirdRasters,"/", bird, "-meanBoot_BCR-", P(sim)$nameBCR, "_", sim$areaName, sep = "")),
                          filetype= "GTiff",
                          gdal="COMPRESS=NONE",
                          overwrite = TRUE)
@@ -458,12 +522,12 @@ print("get rasterToMatch")
   #}, error = function(e) return(NULL))  
 }
 
-  
+  print("make summaryBRC")
   summaryBRC <- lapply(X = P(sim)$birdList,
                   FUN = getMeanRasters)
  
   sim$summaryBRC <- rbindlist(summaryBRC)
-  write.csv(sim$summaryBRC, file =  file.path(outputMeanBirdRasters, "summaryBRC.csv"))
+  write.csv(sim$summaryBRC, file =  file.path(outputMeanBirdRasters, paste("summaryBRC_",  P(sim)$nameBCR, ".csv", sep = "")))
 
   }
   # ! ----- STOP EDITING ----- ! #
