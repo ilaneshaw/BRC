@@ -391,7 +391,7 @@ Event2 <- function(sim) {
     
   ### GET FILES FROM LOCAL LOCATION ###
   print("get files from local folder")
-    browser()
+    #browser()
    
     #get rasterToMatch
     if (!suppliedElsewhere("rasterToMatch", sim)) {
@@ -405,7 +405,7 @@ Event2 <- function(sim) {
   #get StudyArea shapefile
    if (!suppliedElsewhere("studyArea", sim)) {
     print("get studyArea")
-    sim$studyArea <- terra::vect(file.path(P(sim)$studyAreaLocation))
+    sim$studyArea <- terra::vect(file.path(P(sim)$studyAreaLocation, P(sim)$.studyAreaName ))
   }
     sim$studyAreaFolder <- checkPath(file.path(Paths$inputPath, "studyArea"), create = TRUE)
    
