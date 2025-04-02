@@ -11,8 +11,11 @@
 !BRC.R
 
 
-# do not ignore the readme
+# do not ignore the readme, citation and licence
 !README.md
+!CITATION.cff
+!LICENsE
+!COPYING.txt
 
 # do not ignore the following folders
 !/citations
