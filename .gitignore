@@ -9,6 +9,7 @@
 # do not ignore the following Rmd and R files
 !BRC.Rmd
 !BRC.R
+!runBRC.R
 
 
 # do not ignore the readme, citation and licence
