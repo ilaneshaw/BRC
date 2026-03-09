@@ -1,2 +1,9 @@
-Any other details that a user may need to know, like where to get more information,
-where to download data, etc.
+The birdRange, BRC and WBI_vegReclass modules were used to produce the input data for the usage
+example. 
+
+• birdRange: determines which species BAM model rasters pass the selection criteria.
+
+• BRC: produces mean BAM model rasters from all available bootstrap replicate rasters for the study
+area.
+
+• WBI_vegReclass: produces our chosen landscapeRasters.
