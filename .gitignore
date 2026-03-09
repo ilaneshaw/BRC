@@ -19,10 +19,8 @@
 !COPYING.txt
 
 # do not ignore the following folders
-!/citations
-!/data
-!/figures
 !/R
+!/data
 !/tests
 
 
