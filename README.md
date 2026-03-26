@@ -1,7 +1,5 @@
-The birdRange, BRC and WBI_vegReclass modules were used to produce the input data for the usage example in the Piecewise Smoothing manuscript.
+This module produces rasters of the mean, median and std dev of all available bootstrap replicate BAM V4 bird density rasters for a given study area. Example code to run the module can be found in BRC.Rmd
 
-• birdRange: determines which species BAM model rasters pass the selection criteria.
 
-• BRC: produces mean BAM model rasters from all available bootstrap replicate rasters for the study area.
 
-• WBI_vegReclass: produces our chosen landscapeRasters.
+
