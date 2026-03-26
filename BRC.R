@@ -273,36 +273,32 @@ Event2 <- function(sim) {
   message(currentModule(sim), ": using dataPath '", dPath, "'.")
 
   # ! ----- EDIT BELOW ----- ! #
-  browser()
 
-  # get rasterToMatch
+  # Get rasterToMatch ####
   if (!suppliedElsewhere("rasterToMatch", sim)) {
-    print("get rasterTomatch from local drive")
+    print("get rasterToMatch from local drive")
     sim$rasterToMatch <- terra::rast(file.path(P(sim)$rasterToMatchLocation, P(sim)$rasterToMatchName))
+    names(sim$rasterToMatch) <- "rasterToMatch"
   }
-
-  # get studyArea shapefile
+  
+  # Get studyArea shapefile ####
   if (!suppliedElsewhere("studyArea", sim)) {
     print("get studyArea shapefile from local drive")
     studyArea <- terra::vect(file.path(P(sim)$studyAreaLocation, P(sim)$.studyAreaName))
-
+    
     # postProcess studyArea
-    # Cache(projectRaster, raster, crs = crs(newRaster))
-    message("cache studyArea")
-    sim$studyArea <- reproducible::Cache(reproducible::postProcess, studyArea,
-      # destinationPath = P(sim)$studyAreaLocation,
-      # filename2 = "studyArea",
-      useTerra = TRUE,
-      fun = "terra::vect", # use the function vect
-      targetCRS = crs(sim$rasterToMatch), # make crs same as rasterToMatch
-      # overwrite = FALSE,
-      verbose = TRUE
+    sim$studyArea <- reproducible::Cache(reproducible::postProcessTo,
+                                         from = studyArea,
+                                         to = sim$rasterToMatch,
+                                         overwrite = FALSE,
+                                         verbose = TRUE
     )
   }
-
-  # crop and mask rasterToMatch
+  
+  # crop and mask rasterToMatch to studyArea
   sim$rasterToMatch <- reproducible::Cache(terra::crop, sim$rasterToMatch, sim$studyArea)
   sim$rasterToMatch <- reproducible::Cache(terra::mask, sim$rasterToMatch, sim$studyArea)
+  
   names(sim$rasterToMatch) <- "rasterToMatch"
 
 
@@ -353,11 +349,12 @@ Event2 <- function(sim) {
           bootRasters <- terra::rast(bootRasters)
 
           if (P(sim)$writeMeanRas == TRUE) {
-            # write mean rasters
+            # write rasters
             meanRaster <- terra::app(bootRasters, fun = mean, verbose = TRUE)
             meanRasterName <- paste(bird, "-meanBoot_", P(sim)$nameBCR, sep = "")
             names(meanRaster) <- meanRasterName
-            # Plot(meanRaster, main = meanRasterName)
+            
+            #save
             terra::writeRaster(
               x = meanRaster, filename = file.path(paste(P(sim)$outputBirdRastersFolder, "/", bird, "-meanBoot_BCR-", P(sim)$nameBCR, "_", sim$areaName, sep = "")),
               filetype = "GTiff",
@@ -367,11 +364,12 @@ Event2 <- function(sim) {
           }
 
           if (P(sim)$writeMedianRas == TRUE) {
-            # write mean rasters
+            # write rasters
             medianRaster <- terra::app(bootRasters, fun = median, verbose = TRUE)
             medianRasterName <- paste(bird, "-medianBoot_", P(sim)$nameBCR, sep = "")
             names(medianRaster) <- medianRasterName
-            # Plot(medianRaster, main = medianRasterName)
+            
+            #save
             terra::writeRaster(
               x = medianRaster, filename = file.path(paste(P(sim)$outputBirdRastersFolder, "/", bird, "-medianBoot_BCR-", P(sim)$nameBCR, "_", sim$areaName, sep = "")),
               filetype = "GTiff",
@@ -395,11 +393,12 @@ Event2 <- function(sim) {
           }
 
           if (P(sim)$writeSDRas == TRUE) {
-            # write mean rasters
+            # write sd rasters
             sdRaster <- terra::app(bootRasters, fun = sd, verbose = TRUE)
             sdRasterName <- paste(bird, "-sdBoot_", P(sim)$nameBCR, sep = "")
             names(sdRaster) <- sdRasterName
-            # Plot(seRaster, main = seRasterName)
+            
+            #save
             terra::writeRaster(
               x = sdRaster, filename = file.path(paste(P(sim)$outputBirdRastersFolder, "/", bird, "-sdBoot_BCR-", P(sim)$nameBCR, "_", sim$areaName, sep = "")),
               filetype = "GTiff",
@@ -423,9 +422,9 @@ Event2 <- function(sim) {
           if (P(sim)$writeMeanRas == TRUE) {
             meanRasterName <- paste(bird, "-meanBoot", sep = "")
             names(bootRaster) <- meanRasterName
-            # Plot(meanRaster, main = meanRasterName)
             terra::writeRaster(
-              x = bootRaster, filename = file.path(paste(P(sim)$outputBirdRastersFolder, "/", bird, "-meanBoot_BCR-", P(sim)$nameBCR, "_", sim$areaName, sep = "")),
+              x = bootRaster, 
+              filename = file.path(paste(P(sim)$outputBirdRastersFolder, "/", bird, "-meanBoot_BCR-", P(sim)$nameBCR, "_", sim$areaName, sep = "")),
               filetype = "GTiff",
               gdal = "COMPRESS=NONE",
               overwrite = TRUE

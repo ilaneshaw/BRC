@@ -50,7 +50,7 @@ download.file(url = "https://img.shields.io/badge/Made%20with-Markdown-1f425f.pn
 
 #### Authors:
 
-`r paste(as.character(SpaDES.core::moduleMetadata(module = "BRC", path = '..')$authors), sep = ', ')`
+`r paste(as.character(SpaDES.core::moduleMetadata(module = "BRC", path = "../../modules")$authors), sep = ', ')`
 <!-- ideally separate authors with new lines, '\n' not working -->
 
 ## Module Overview
@@ -65,11 +65,11 @@ This is a template for module documentation, and should be changed to reflect yo
 ### Module inputs and parameters
 
 Describe input data required by the module and how to obtain it (e.g., directly from online sources or supplied by other modules)
-If `sourceURL` is specified, `downloadData("BRC", "C:/Users/RALAS6/Documents/Repositories/SpaDES")` may be sufficient.
+If `sourceURL` is specified, `downloadData("BRC", "")` may be sufficient.
 Table \@ref(tab:moduleInputs-BRC) shows the full list of module inputs.
 
 ```{r moduleInputs-BRC, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
-df_inputs <- SpaDES.core::moduleInputs("BRC", "C:/Users/RALAS6/Documents/Repositories/SpaDES/modules")
+df_inputs <- SpaDES.core::moduleInputs("BRC", "../../modules")
 knitr::kable(df_inputs,
              caption = "List of (ref:BRC) input objects and their description.") %>%
   kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
@@ -81,7 +81,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-BRC))
 
 
 ```{r moduleParams-BRC, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
-df_params <- SpaDES.core::moduleParams("BRC", "C:/Users/RALAS6/Documents/Repositories/SpaDES/modules")
+df_params <- SpaDES.core::moduleParams("BRC", "../../modules")
 knitr::kable(df_params, caption = "List of (ref:BRC) parameters and their description.") %>%
   kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
 ```
@@ -103,7 +103,7 @@ Write what is saved.
 Description of the module outputs (Table \@ref(tab:moduleOutputs-BRC)).
 
 ```{r moduleOutputs-BRC, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
-df_outputs <- SpaDES.core::moduleOutputs("BRC", "C:/Users/RALAS6/Documents/Repositories/SpaDES/modules")
+df_outputs <- SpaDES.core::moduleOutputs("BRC", "../../modules")
 knitr::kable(df_outputs, caption = "List of (ref:BRC) outputs and their description.") %>%
   kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
 ```
@@ -131,17 +131,6 @@ setPaths(modulePath = file.path("../../modules"),
          outputPath = file.path("../../outputs"))
 simPaths <- getPaths()
 
-# #parameters from Drive
-# birdList <- c("AMCR", "CAWA")
-# rasterToMatchLocation <- as_id("https://drive.google.com/file/d/1dprb9sQZAUP6ty4BOQMbFf4gSiHKnvqp/view?usp=share_link")
-# studyAreaLocation <- file.path("https://drive.google.com/file/d/1iYXdXFcZex304o5voX6igFm5EC0ck1Bp/view?usp=sharing")
-# nameBCR <- "60"
-# bootRastersLocation <- ""
-# .studyAreaName <- "studyAreaAB.shp" #specify file name
-#  #specify folder url
-# archiveStudyArea <- "studyAreaAB.zip" #give archive name
-# rasterToMatchName <- "LCC2005_V1_4a.tif"
-
 #parameters from local
 print("set up parameter details")
 rasterToMatchLocation <- Paths$inputPath #say where to find the rasterToMatch file. The rasterTomatch gives the crs and resolution for the whole simulation. It must cover the whole area covered by the studyArea
@@ -149,9 +138,12 @@ rasterToMatchName <- "LCC2005_V1_4a.tif" #give the name of the rasterToMatch .ti
 studyAreaLocation <- file.path(Paths$inputPath, "studyArea/studyArea_AB_BCR6") #give the location of the studyArea shapefile
 .studyAreaName <- "studyArea_AB_BCR6" #specify the file name of the studyArea shapefile
 bootRastersLocation <- file.path(Paths$inputPath, "bootBirdRasters") #give the location where the bootstrapped bird rasters can be found
-outputBirdRastersFolder <- checkPath(file.path(Paths$outputPath, "birdRasters"), create = TRUE) #say where to write the output rasters to
-nameBCR <- "60" #give the name of the BCR you want to create rasters for in the format: "##"
-#birdList <- sort(c("CAWA", "OVEN")) #give a list of the 4-letter bird codes for the bird species you wish to create rasters for.
+outputBirdRastersFolder <- checkPath(file.path(Paths$inputPath, "meanSpRasters"), create = TRUE) #say where to write the output rasters to
+
+# specify BCR (to be provided as parameter)
+nameBCR <- "60"
+
+#give a list of the 4-letter bird codes for the bird species you wish to create rasters for (provided as a parameter)
 birdList <- sort(unique(c("ALFL", "AMCR", "AMGO", "AMPI", "AMRE", "AMRO", "ATSP", 
                  "ATTW", "BANS", "BAOR", "BARS", "BAWW", "BBCU", "BBMA", 
                  "BBWA", "BBWO", "BCCH", "BEKI", "BHCO", "BHVI", "BLBW",
@@ -187,8 +179,6 @@ birdList <- sort(unique(c("ALFL", "AMCR", "AMGO", "AMPI", "AMRE", "AMRO", "ATSP"
                  "WIPT", "WISN", "WITU", "WIWA", "WIWR", "WOTH", "WTSP",
                  "WWCR", "YBCU", "YBFL", "YBSA", "YEWA", "YHBL", "YRWA")))
 
-# birdList <- sort(c("ALFL","AMCR", "AMGO","AMPI","AMRE", "AMRO","ATSP","ATTW","BANS","BAOR","BARS","BAWW","BBCU", "BBMA","BBWA", "BBWO","BCCH","BEKI","BHCO", "BHVI","BLBW","BLJA","BLPW","BOBO","BOCH","BOWA","BRBL","BRCR","BRTH", "BTNW", "BWWA","CAWA","CCSP","CEDW","CHSP","CLSW","CMWA","COGR","CONW","CORA","COYE","CSWA","DEJU","DOWO", "DUFL","EABL","EAKI","EAPH", "EATO","EAWP","EUST", "EVGR","FOSP","GCFL","GCKI", "GCSP", "GCTH","GRAJ","GRCA","GRSP","GRYE","GWWA","HAFL","HAWO","HETH","HOLA","HOSP","HOWR","INBU","KILL","LCSP","LEFL", "LEYE", "MOWA","NESP","OSFL","OVEN","PAWA", "PHVI","RBNU", "RCKI","REVI", "RUBL","SWTH", "TEWA", "WCSP", "WETA", "WIWR", "YRWA"))
-
 print("set module and simulation params")
 simModules <- list("BRC")
 
@@ -198,8 +188,8 @@ simParams <- list(
   BRC = list(simulationTimeStep = 10, 
              .plotInitialTime = 1,
              fromDrive = FALSE, #TRUE/FALSE, should the boot bird rasters be downloaded from googledrive
-             writeMeanRas = FALSE, #T/F do you want to create a raster of mean of the bootstrap replicates?
-             writeMedianRas = TRUE, #T/F do you want to create a raster of median of the bootstrap replicates?
+             writeMeanRas = FALSE, #T/F do you want to create a raster of the mean of the bootstrap replicates?
+             writeMedianRas = FALSE, #T/F do you want to create a raster of the median of the bootstrap replicates?
              writeSERas = FALSE, #T/F do you want to create a raster of standard error between the bootstrap replicates?
              writeSDRas = FALSE, #T/F do you want to create a raster of standard deviation between the bootstrap replicates?
              rasterToMatchLocation = rasterToMatchLocation, 
