@@ -280,25 +280,25 @@ Event2 <- function(sim) {
     sim$rasterToMatch <- terra::rast(file.path(P(sim)$rasterToMatchLocation, P(sim)$rasterToMatchName))
     names(sim$rasterToMatch) <- "rasterToMatch"
   }
-  
+
   # Get studyArea shapefile ####
   if (!suppliedElsewhere("studyArea", sim)) {
     print("get studyArea shapefile from local drive")
     studyArea <- terra::vect(file.path(P(sim)$studyAreaLocation, P(sim)$.studyAreaName))
-    
+
     # postProcess studyArea
     sim$studyArea <- reproducible::Cache(reproducible::postProcessTo,
-                                         from = studyArea,
-                                         to = sim$rasterToMatch,
-                                         overwrite = FALSE,
-                                         verbose = TRUE
+      from = studyArea,
+      to = sim$rasterToMatch,
+      overwrite = FALSE,
+      verbose = TRUE
     )
   }
-  
+
   # crop and mask rasterToMatch to studyArea
   sim$rasterToMatch <- reproducible::Cache(terra::crop, sim$rasterToMatch, sim$studyArea)
   sim$rasterToMatch <- reproducible::Cache(terra::mask, sim$rasterToMatch, sim$studyArea)
-  
+
   names(sim$rasterToMatch) <- "rasterToMatch"
 
 
@@ -319,10 +319,12 @@ Event2 <- function(sim) {
         {
           print(ras)
           bootRaster <- terra::rast(paste(P(sim)$bootRastersLocation, "/", ras, sep = ""))
-          bootRaster <- postProcessTerra(
+          bootRaster <- reproducible::postProcessTo(
             from = bootRaster,
             to = sim$rasterToMatch,
-            overwrite = TRUE,
+            cropTo = sim$studyArea,
+            maskTo = sim$studyArea,
+            overwrite = FALSE,
             verbose = TRUE
           )
 
@@ -353,10 +355,10 @@ Event2 <- function(sim) {
             meanRaster <- terra::app(bootRasters, fun = mean, verbose = TRUE)
             meanRasterName <- paste(bird, "-meanBoot_", P(sim)$nameBCR, sep = "")
             names(meanRaster) <- meanRasterName
-            
-            #save
+
+            # save
             terra::writeRaster(
-              x = meanRaster, filename = file.path(paste(P(sim)$outputBirdRastersFolder, "/", bird, "-meanBoot_BCR-", P(sim)$nameBCR, "_", sim$areaName, sep = "")),
+              x = meanRaster, filename = file.path(paste(P(sim)$outputBirdRastersFolder, "/", bird, "-meanBoot_BCR-", P(sim)$nameBCR, "_", P(sim)$.studyAreaName, sep = "")),
               filetype = "GTiff",
               gdal = "COMPRESS=NONE",
               overwrite = TRUE
@@ -368,10 +370,10 @@ Event2 <- function(sim) {
             medianRaster <- terra::app(bootRasters, fun = median, verbose = TRUE)
             medianRasterName <- paste(bird, "-medianBoot_", P(sim)$nameBCR, sep = "")
             names(medianRaster) <- medianRasterName
-            
-            #save
+
+            # save
             terra::writeRaster(
-              x = medianRaster, filename = file.path(paste(P(sim)$outputBirdRastersFolder, "/", bird, "-medianBoot_BCR-", P(sim)$nameBCR, "_", sim$areaName, sep = "")),
+              x = medianRaster, filename = file.path(paste(P(sim)$outputBirdRastersFolder, "/", bird, "-medianBoot_BCR-", P(sim)$nameBCR, "_", P(sim)$.studyAreaName, sep = "")),
               filetype = "GTiff",
               gdal = "COMPRESS=NONE",
               overwrite = TRUE
@@ -385,7 +387,7 @@ Event2 <- function(sim) {
             names(seRaster) <- seRasterName
             # Plot(seRaster, main = seRasterName)
             terra::writeRaster(
-              x = seRaster, filename = file.path(paste(P(sim)$outputBirdRastersFolder, "/", bird, "-seBoot_BCR-", P(sim)$nameBCR, "_", sim$areaName, sep = "")),
+              x = seRaster, filename = file.path(paste(P(sim)$outputBirdRastersFolder, "/", bird, "-seBoot_BCR-", P(sim)$nameBCR, "_", P(sim)$.studyAreaName, sep = "")),
               filetype = "GTiff",
               gdal = "COMPRESS=NONE",
               overwrite = TRUE
@@ -397,10 +399,10 @@ Event2 <- function(sim) {
             sdRaster <- terra::app(bootRasters, fun = sd, verbose = TRUE)
             sdRasterName <- paste(bird, "-sdBoot_", P(sim)$nameBCR, sep = "")
             names(sdRaster) <- sdRasterName
-            
-            #save
+
+            # save
             terra::writeRaster(
-              x = sdRaster, filename = file.path(paste(P(sim)$outputBirdRastersFolder, "/", bird, "-sdBoot_BCR-", P(sim)$nameBCR, "_", sim$areaName, sep = "")),
+              x = sdRaster, filename = file.path(paste(P(sim)$outputBirdRastersFolder, "/", bird, "-sdBoot_BCR-", P(sim)$nameBCR, "_", P(sim)$.studyAreaName, sep = "")),
               filetype = "GTiff",
               gdal = "COMPRESS=NONE",
               overwrite = TRUE
@@ -423,8 +425,8 @@ Event2 <- function(sim) {
             meanRasterName <- paste(bird, "-meanBoot", sep = "")
             names(bootRaster) <- meanRasterName
             terra::writeRaster(
-              x = bootRaster, 
-              filename = file.path(paste(P(sim)$outputBirdRastersFolder, "/", bird, "-meanBoot_BCR-", P(sim)$nameBCR, "_", sim$areaName, sep = "")),
+              x = bootRaster,
+              filename = file.path(paste(P(sim)$outputBirdRastersFolder, "/", bird, "-meanBoot_BCR-", P(sim)$nameBCR, "_", P(sim)$.studyAreaName, sep = "")),
               filetype = "GTiff",
               gdal = "COMPRESS=NONE",
               overwrite = TRUE
@@ -434,9 +436,9 @@ Event2 <- function(sim) {
           if (P(sim)$writeMedianRas == TRUE) {
             medianRasterName <- paste(bird, "-medianBoot", sep = "")
             names(bootRaster) <- medianRasterName
-            # Plot(medianRaster, main = medianRasterName)
+
             terra::writeRaster(
-              x = bootRaster, filename = file.path(paste(P(sim)$outputBirdRastersFolder, "/", bird, "-medianBoot_BCR-", P(sim)$nameBCR, "_", sim$areaName, sep = "")),
+              x = bootRaster, filename = file.path(paste(P(sim)$outputBirdRastersFolder, "/", bird, "-medianBoot_BCR-", P(sim)$nameBCR, "_", P(sim)$.studyAreaName, sep = "")),
               filetype = "GTiff",
               gdal = "COMPRESS=NONE",
               overwrite = TRUE
