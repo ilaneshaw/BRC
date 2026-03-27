@@ -137,8 +137,12 @@ simPaths <- getPaths()
 
 # rasterToMatch
 # note: It must cover the whole area covered by the studyArea
-rasterToMatchLocation <- Paths$inputPath
-rasterToMatchName <- "LCC2005_V1_4a.tif"
+#rasterToMatch
+locationLandscapeRasters <- checkPath(file.path(Paths$inputPath, "landscapeRasters"), create = TRUE)
+zen4R::download_zenodo(doi = "10.5281/zenodo.17410019", path = locationLandscapeRasters)
+unzip(file.path(locationLandscapeRasters, "landscapeRasters.zip"), exdir = locationLandscapeRasters)
+locationRasterToMatch <- locationLandscapeRasters
+rasterToMatchName <- "landCoverRas_AB_BCR6_2010"
 
 # studyArea
 locationStudyArea <- checkPath(file.path(Paths$inputPath, "studyArea"), create = TRUE)
